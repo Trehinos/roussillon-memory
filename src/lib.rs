@@ -47,7 +47,7 @@ mod tests {
     fn test_float_reference() {
         let mut memory = Memory::default();
 
-        let original_cell = Float::new(3.1415).to_cell();
+        let original_cell = Float::new(std::f64::consts::PI).to_cell();
         let reference = memory.allocate(original_cell.clone());
         test_type(&reference, &Primitive::Float.typename());
         let dereferenced = memory.dereference(reference).unwrap();
