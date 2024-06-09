@@ -48,7 +48,7 @@ mod tests {
 
         for (data, t) in [
             (Bytes::Byte(77), Primitive::Byte.typename()),
-            (Bytes::Arch(8855887455), Primitive::Bytes(8).typename()),
+            (Bytes::Arch(16584), Primitive::Bytes(std::mem::size_of::<usize>()).typename()),
             (Bytes::Word(16584), Primitive::Bytes(2).typename()),
             (Bytes::Quad(998555), Primitive::Bytes(4).typename()),
             (Bytes::Long(8855887455), Primitive::Bytes(8).typename()),
