@@ -11,6 +11,6 @@ dependencies = [
 
 [[package]]
 name = "roussillon-type-system"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1c518ff852fb301951e4c396c41ef113a7794a9855fd8d32a66efc77530d6f6f"
+checksum = "52f18215d24c71597b134dd848119035cc7ed3b7d1ac7a7584d82ca17684cac7"

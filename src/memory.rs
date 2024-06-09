@@ -3,10 +3,11 @@ use roussillon_type_system::typing::primitive::Primitive;
 use roussillon_type_system::value::boolean::Boolean;
 use roussillon_type_system::value::byte::Bytes;
 use roussillon_type_system::value::concept::ValueCell;
+use roussillon_type_system::value::number::{Float, Integer};
 use roussillon_type_system::value::reference::Reference;
 
 pub trait Allocator {
-    fn alloc_cell(&mut self, cell: ValueCell) -> Reference;
+    fn allocate(&mut self, cell: ValueCell) -> Reference;
 }
 
 pub trait Dereference {
@@ -24,7 +25,7 @@ impl Memory {
 }
 
 impl Allocator for Memory {
-    fn alloc_cell(&mut self, cell: ValueCell) -> Reference {
+    fn allocate(&mut self, cell: ValueCell) -> Reference {
         let address = self.raw.len();
         let borrowed_cell = cell.borrow();
         self.raw.extend_from_slice(&borrowed_cell.raw());
@@ -46,6 +47,8 @@ impl Dereference for Memory {
             s if s == Primitive::Byte.typename() || s == Primitive::Bytes(raw.len()).typename() =>
                 Bytes::from(raw).to_cell(),
             s if s == Primitive::Boolean.typename() => Boolean::from(raw).to_cell(),
+            s if s == Primitive::Integer.typename() => Integer::from(raw).to_cell(),
+            s if s == Primitive::Float.typename() => Float::from(raw).to_cell(),
             s => panic!("Unimplemented dereference for type {}", s)
         })
     }

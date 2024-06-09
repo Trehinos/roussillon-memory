@@ -8,6 +8,7 @@ mod tests {
     use roussillon_type_system::value::boolean::Boolean;
     use roussillon_type_system::value::byte::Bytes;
     use roussillon_type_system::value::concept::{DataValue, ValueCell};
+    use roussillon_type_system::value::number::{Float, Integer};
     use roussillon_type_system::value::reference::Reference;
     use crate::memory::{Allocator, Dereference, Memory};
 
@@ -32,14 +33,36 @@ mod tests {
         
         let original_true = Boolean::create_true().to_cell();
         let original_false = Boolean::create_false().to_cell();
-        let reference_true = memory.alloc_cell(original_true.clone());
-        let reference_false = memory.alloc_cell(original_false.clone());
+        let reference_true = memory.allocate(original_true.clone());
+        let reference_false = memory.allocate(original_false.clone());
         test_type(&reference_true, &Primitive::Boolean.typename());
         test_type(&reference_false, &Primitive::Boolean.typename());
         let dereferenced_true = memory.dereference(reference_true).unwrap();
         let dereferenced_false = memory.dereference(reference_false).unwrap();
         test_cells(&original_true, &dereferenced_true);
         test_cells(&original_false, &dereferenced_false);
+    }
+
+    #[test]
+    fn test_float_reference() {
+        let mut memory = Memory::default();
+
+        let original_cell = Float::new(3.1415).to_cell();
+        let reference = memory.allocate(original_cell.clone());
+        test_type(&reference, &Primitive::Float.typename());
+        let dereferenced = memory.dereference(reference).unwrap();
+        test_cells(&original_cell, &dereferenced);
+    }
+
+    #[test]
+    fn test_integer_reference() {
+        let mut memory = Memory::default();
+
+        let original_cell = Integer::new(1415).to_cell();
+        let reference = memory.allocate(original_cell.clone());
+        test_type(&reference, &Primitive::Integer.typename());
+        let dereferenced = memory.dereference(reference).unwrap();
+        test_cells(&original_cell, &dereferenced);
     }
 
     #[test]
@@ -55,7 +78,7 @@ mod tests {
             (Bytes::Wide(usize::MAX as u128 + 15550), Primitive::Bytes(16).typename()),
         ] {
             let original_cell = data.to_cell();
-            let reference = memory.alloc_cell(original_cell.clone());
+            let reference = memory.allocate(original_cell.clone());
             test_type(&reference, &t);
             let dereferenced = memory.dereference(reference).unwrap();
             test_cells(&original_cell, &dereferenced);
