@@ -13,7 +13,7 @@ mod tests {
     use roussillon_type_system::value::number::{Float, Integer};
     use roussillon_type_system::value::record::Record;
     use roussillon_type_system::value::reference::Reference;
-    use crate::memory::{Allocator, Dereference, Memory};
+    use crate::memory::{Allocator, Dereference, Region};
 
     fn test_type(r: &Reference, typename: &str) {
         println!("• {}", r.data_type().typename());
@@ -32,7 +32,7 @@ mod tests {
     
     #[test]
     fn test_struct_reference() {
-        let mut memory = Memory::default();
+        let mut memory = Region::default();
 
         let my_struct = Structure::new("MyStruct", ProductType::new(&[
             Primitive::Integer.to_rc(),
@@ -57,7 +57,7 @@ mod tests {
     
     #[test]
     fn test_boolean_references() {
-        let mut memory = Memory::default();
+        let mut memory = Region::default();
         
         let original_true = Boolean::create_true().to_cell();
         let original_false = Boolean::create_false().to_cell();
@@ -73,7 +73,7 @@ mod tests {
 
     #[test]
     fn test_float_reference() {
-        let mut memory = Memory::default();
+        let mut memory = Region::default();
 
         let original_cell = Float::new(std::f64::consts::PI).to_cell();
         let reference = memory.allocate(original_cell.clone());
@@ -84,7 +84,7 @@ mod tests {
 
     #[test]
     fn test_integer_reference() {
-        let mut memory = Memory::default();
+        let mut memory = Region::default();
 
         let original_cell = Integer::new(-1415).to_cell();
         let reference = memory.allocate(original_cell.clone());
@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     fn test_bytes_references() {
-        let mut memory = Memory::default();
+        let mut memory = Region::default();
 
         for (data, t) in [
             (Bytes::Byte(77), Primitive::Byte.typename()),
