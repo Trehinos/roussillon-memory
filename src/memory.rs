@@ -1,5 +1,5 @@
-use roussillon_type_system::typing::concept::DataType;
-use roussillon_type_system::typing::primitive::Primitive;
+use roussillon_type_system::types::concept::DataType;
+use roussillon_type_system::types::primitive::Primitive;
 use roussillon_type_system::value::boolean::Boolean;
 use roussillon_type_system::value::byte::Bytes;
 use roussillon_type_system::value::concept::ValueCell;
