@@ -1,10 +1,5 @@
-use roussillon_type_system::types::concept::DataType;
-use roussillon_type_system::types::primitive::Primitive;
-use roussillon_type_system::value::boolean::Boolean;
-use roussillon_type_system::value::byte::Bytes;
-use roussillon_type_system::value::concept::ValueCell;
-use roussillon_type_system::value::number::{Float, Integer};
 use roussillon_type_system::value::reference::Reference;
+use roussillon_type_system::value::concept::ValueCell;
 
 pub trait Allocator {
     fn allocate(&mut self, cell: ValueCell) -> Reference;
@@ -43,13 +38,6 @@ impl Dereference for Memory {
         let end = start + referenced_type.size();
         if end > self.raw.len() { return None; };
         let raw = &self.raw[start..end];
-        Some(match referenced_type.typename() {
-            s if s == Primitive::Byte.typename() || s == Primitive::Bytes(raw.len()).typename() =>
-                Bytes::from(raw).to_cell(),
-            s if s == Primitive::Boolean.typename() => Boolean::from(raw).to_cell(),
-            s if s == Primitive::Integer.typename() => Integer::from(raw).to_cell(),
-            s if s == Primitive::Float.typename() => Float::from(raw).to_cell(),
-            s => panic!("Unimplemented dereference for type {}", s)
-        })
+        Some(referenced_type.construct_from_raw(raw).unwrap())
     }
 }
