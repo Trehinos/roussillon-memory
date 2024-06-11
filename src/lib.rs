@@ -2,24 +2,25 @@ pub mod region;
 pub mod heap;
 pub mod stack;
 
-
 #[cfg(test)]
 mod tests {
     use roussillon_type_system::types::algebraic::ProductType;
     use roussillon_type_system::types::concept::DataType;
     use roussillon_type_system::types::primitive::Primitive;
     use roussillon_type_system::types::typedef::Structure;
+    
     use roussillon_type_system::value::boolean::Boolean;
     use roussillon_type_system::value::byte::Bytes;
     use roussillon_type_system::value::concept::{DataValue, ValueCell};
     use roussillon_type_system::value::number::{Float, Integer};
     use roussillon_type_system::value::record::Record;
     use roussillon_type_system::value::reference::Reference;
+    
     use crate::heap::Heap;
     use crate::region::{Allocator, Dereference, Region};
 
     fn test_type(r: &Reference, typename: &str) {
-        println!("• {}", r.data_type().typename());
+        // println!("• {}", r.data_type().typename());
         assert_eq!(r.data_type().typename(), format!("&{}", typename));
     }
 
@@ -28,7 +29,7 @@ mod tests {
         let raw1 = original_cell.borrow().raw();
         let t2 = dereferenced.borrow().data_type().typename();
         let raw2 = dereferenced.borrow().raw();
-        println!("{:?} <=> {:?}", original_cell.borrow(), dereferenced.borrow());
+        // println!("{:?} <=> {:?}", original_cell.borrow(), dereferenced.borrow());
         assert_eq!(t1, t2);
         assert_eq!(raw1, raw2);
     }
@@ -42,7 +43,7 @@ mod tests {
             Primitive::Integer.to_rc(),
             Primitive::Float.to_rc(),
         ])).to_rc();
-        println!("\n{:?}", my_struct);
+        // println!("\n{:?}", my_struct);
 
         let original_object = Record::new(my_struct.clone(), &[
             Integer::new(40).to_cell(),
@@ -59,14 +60,17 @@ mod tests {
     #[test]
     fn test_heap() {
         let mut heap = Heap::new();
+        // println!("{:?}", heap);
+        
         heap.next_generation();
+        // println!("{:?}", heap);
 
         let my_struct = Structure::new("MyStruct", ProductType::new(&[
             Primitive::Integer.to_rc(),
             Primitive::Integer.to_rc(),
             Primitive::Float.to_rc(),
         ])).to_rc();
-        println!("\n{:?}", my_struct);
+        // println!("\n{:?}", my_struct);
 
         let original_object = Record::new(my_struct.clone(), &[
             Integer::new(40).to_cell(),
@@ -76,8 +80,17 @@ mod tests {
 
         let reference = heap.allocate(original_object.clone());
         test_type(reference.reference(), "MyStruct");
-        let dereferenced_object = heap.dereference(reference).unwrap();
+        let dereferenced_object = heap.dereference(reference.clone()).unwrap();
         test_cells(&original_object, &dereferenced_object);
+        // println!("{:?}", heap);
+        
+        heap.next_generation();
+        assert_eq!(heap.current_generation().unwrap(), 1);
+        // println!("{:?}", heap);
+        
+        heap.clear(0);
+        // println!("{:?}", heap);
+        assert!(!heap.validate(&reference));
     }
 
     #[test]

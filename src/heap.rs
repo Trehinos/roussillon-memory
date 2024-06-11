@@ -1,8 +1,9 @@
+use std::fmt::{Debug, Formatter};
 use roussillon_type_system::value::concept::ValueCell;
 use roussillon_type_system::value::reference::Reference;
 use crate::region::{Allocator, Dereference, Region};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum RegionValidity {
     Alive(Region),
     Dropped,
@@ -25,6 +26,7 @@ impl RegionValidity {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct HeapReference {
     generation: usize,
     reference: Reference,
@@ -34,6 +36,8 @@ impl HeapReference {
     pub fn reference(&self) -> &Reference {
         &self.reference
     }
+
+    pub fn generation(&self) -> usize { self.generation }
 }
 
 #[derive(Default)]
@@ -48,7 +52,7 @@ impl Heap {
     pub fn next_generation(&mut self) -> &Region {
         self.current = match self.current {
             None => Some(0),
-            Some(s) => Some(s + 1),
+            Some(_) => Some(self.raw.len()),
         };
         self.raw.push(RegionValidity::Alive(Region::default()));
         self.raw.last().unwrap().unwrap()
@@ -87,5 +91,18 @@ impl Dereference<HeapReference> for Heap {
         } else {
             false
         }
+    }
+}
+
+impl Debug for Heap {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "Heap [{:?}]", self.current)?;
+        for (i, r) in self.raw.iter().enumerate() {
+            writeln!(f, "  - Region #{} : {}", i, match r {
+                RegionValidity::Alive(region) => format!("Alive (&{})", region.len()),
+                RegionValidity::Dropped => "Dropped".to_string()
+            })?;
+        }
+        Ok(())
     }
 }

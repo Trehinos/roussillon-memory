@@ -49,12 +49,13 @@ impl Dereference for Region {
     }
 }
 
+#[derive(Clone, Debug, Default)]
 pub struct Area {
     regions: HashMap<String, Region>,
 }
 
 impl Area {
-    pub fn empty() -> Self { Self { regions: HashMap::new() } }
+    pub fn new() -> Self { Self { regions: HashMap::new() } }
 
     pub fn get(&self, label: &Label) -> Option<&Region> {
         self.regions.get(&label.to_string())
