@@ -1,4 +1,6 @@
-pub mod memory;
+pub mod region;
+pub mod heap;
+pub mod stack;
 
 
 #[cfg(test)]
@@ -13,7 +15,8 @@ mod tests {
     use roussillon_type_system::value::number::{Float, Integer};
     use roussillon_type_system::value::record::Record;
     use roussillon_type_system::value::reference::Reference;
-    use crate::memory::{Allocator, Dereference, Region};
+    use crate::heap::Heap;
+    use crate::region::{Allocator, Dereference, Region};
 
     fn test_type(r: &Reference, typename: &str) {
         println!("• {}", r.data_type().typename());
@@ -46,15 +49,37 @@ mod tests {
             Integer::new(96).to_cell(),
             Float::new(40.0).to_cell()
         ]).unwrap().to_cell();
-        
+
         let reference = memory.allocate(original_object.clone());
         test_type(&reference, "MyStruct");
         let dereferenced_object = memory.dereference(reference).unwrap();
         test_cells(&original_object, &dereferenced_object);
-        
-        
     }
     
+    #[test]
+    fn test_heap() {
+        let mut heap = Heap::new();
+        heap.next_generation();
+
+        let my_struct = Structure::new("MyStruct", ProductType::new(&[
+            Primitive::Integer.to_rc(),
+            Primitive::Integer.to_rc(),
+            Primitive::Float.to_rc(),
+        ])).to_rc();
+        println!("\n{:?}", my_struct);
+
+        let original_object = Record::new(my_struct.clone(), &[
+            Integer::new(40).to_cell(),
+            Integer::new(96).to_cell(),
+            Float::new(40.0).to_cell()
+        ]).unwrap().to_cell();
+
+        let reference = heap.allocate(original_object.clone());
+        test_type(reference.reference(), "MyStruct");
+        let dereferenced_object = heap.dereference(reference).unwrap();
+        test_cells(&original_object, &dereferenced_object);
+    }
+
     #[test]
     fn test_boolean_references() {
         let mut memory = Region::default();
@@ -86,7 +111,7 @@ mod tests {
     fn test_integer_reference() {
         let mut memory = Region::default();
 
-        let original_cell = Integer::new(-1415).to_cell();
+        let original_cell = Integer::new(1415).to_cell();
         let reference = memory.allocate(original_cell.clone());
         test_type(&reference, &Primitive::Integer.typename());
         let dereferenced = memory.dereference(reference).unwrap();

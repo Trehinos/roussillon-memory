@@ -1,14 +1,15 @@
 use std::collections::HashMap;
 use roussillon_type_system::identity::Label;
 use roussillon_type_system::value::reference::Reference;
-use roussillon_type_system::value::concept::ValueCell;
+use roussillon_type_system::value::concept::{DataValue, ValueCell};
 
-pub trait Allocator {
-    fn allocate(&mut self, cell: ValueCell) -> Reference;
+pub trait Allocator<R=Reference, C=ValueCell> {
+    fn allocate(&mut self, cell: C) -> R;
 }
 
-pub trait Dereference {
-    fn dereference(&self, reference: Reference) -> Option<ValueCell>;
+pub trait Dereference<R=Reference, C=ValueCell> {
+    fn dereference(&self, reference: R) -> Option<C>;
+    fn validate(&self, reference: &R) -> bool;
 }
 
 #[derive(Clone, Default, Debug)]
@@ -41,6 +42,10 @@ impl Dereference for Region {
         if end > self.raw.len() { return None; };
         let raw = &self.raw[start..end];
         Some(referenced_type.construct_from_raw(raw).unwrap())
+    }
+
+    fn validate(&self, reference: &Reference) -> bool {
+        (reference.get_address() + reference.data_type().size()) < self.len()
     }
 }
 
