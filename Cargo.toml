@@ -2,7 +2,7 @@
 name = "roussillon-memory"
 description = "Memory utility for the roussillon language"
 authors = ["Sébastien GELDREICH <trehinos@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 license = "MIT"
 keywords = ["memory", "reference", "heap", "stack", "region"]
