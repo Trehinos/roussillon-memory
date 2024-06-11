@@ -1,5 +1,8 @@
+
 pub mod region;
+#[cfg(feature = "heap")]
 pub mod heap;
+#[cfg(feature = "stack")]
 pub mod stack;
 
 #[cfg(test)]
