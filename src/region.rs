@@ -69,3 +69,27 @@ impl Area {
         self.regions.insert(label.to_string(), region)
     }
 }
+
+
+#[derive(Clone, Debug)]
+pub enum DroppableRegion {
+    Alive(Region),
+    Dropped,
+}
+
+impl DroppableRegion {
+    pub fn is_alive(&self) -> bool {
+        matches!(self, Self::Alive(_))
+    }
+
+    pub fn is_dropped(&self) -> bool {
+        matches!(self, Self::Dropped)
+    }
+
+    pub fn unwrap(&self) -> &Region {
+        match self {
+            DroppableRegion::Alive(region) => region,
+            DroppableRegion::Dropped => panic!("Attempted to unwrap a dropped region"),
+        }
+    }
+}

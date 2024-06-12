@@ -7,18 +7,23 @@ pub mod stack;
 
 #[cfg(test)]
 mod tests {
-    use roussillon_type_system::types::algebraic::ProductType;
-    use roussillon_type_system::types::concept::DataType;
-    use roussillon_type_system::types::primitive::Primitive;
-    use roussillon_type_system::types::typedef::Structure;
-    
-    use roussillon_type_system::value::boolean::Boolean;
-    use roussillon_type_system::value::byte::Bytes;
-    use roussillon_type_system::value::concept::{DataValue, ValueCell};
-    use roussillon_type_system::value::number::{Float, Integer};
-    use roussillon_type_system::value::record::Record;
-    use roussillon_type_system::value::reference::Reference;
-    
+    use roussillon_type_system::{
+        types::{
+            concept::DataType,
+            primitive::Primitive,
+            algebraic::ProductType,
+            typedef::Structure
+        },
+        value::{
+            concept::{DataValue, ValueCell},
+            boolean::Boolean,
+            byte::Bytes,
+            number::{Float, Integer},
+            record::Record,
+            reference::Reference
+        }
+    };
+
     use crate::heap::Heap;
     use crate::region::{Allocator, Dereference, Region};
 
@@ -64,9 +69,11 @@ mod tests {
     fn test_heap() {
         let mut heap = Heap::new();
         // println!("{:?}", heap);
+        assert_eq!(heap.current_generation(), None);
         
         heap.next_generation();
         // println!("{:?}", heap);
+        assert_eq!(heap.current_generation(), Some(0));
 
         let my_struct = Structure::new("MyStruct", ProductType::new(&[
             Primitive::Integer.to_rc(),
@@ -82,6 +89,8 @@ mod tests {
         ]).unwrap().to_cell();
 
         let reference = heap.allocate(original_object.clone());
+        println!("{:?}", reference);
+        
         test_type(reference.reference(), "MyStruct");
         let dereferenced_object = heap.dereference(reference.clone()).unwrap();
         test_cells(&original_object, &dereferenced_object);

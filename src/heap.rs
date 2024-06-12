@@ -1,28 +1,36 @@
+use std::cell::RefCell;
 use std::fmt::{Debug, Formatter};
-use roussillon_type_system::value::concept::ValueCell;
+use std::rc::Rc;
+use roussillon_type_system::types::concept::{DataType, Type};
+use roussillon_type_system::value::concept::{DataValue, ValueCell};
+use roussillon_type_system::value::error::TypeResult;
 use roussillon_type_system::value::reference::Reference;
-use crate::region::{Allocator, Dereference, Region};
+use crate::region::{Allocator, Dereference, Region, DroppableRegion};
 
-#[derive(Clone, Debug)]
-pub enum RegionValidity {
-    Alive(Region),
-    Dropped,
+pub struct HeapReferenceType {
+    generation: usize,
+    t: Type
 }
 
-impl RegionValidity {
-    pub fn is_alive(&self) -> bool {
-        matches!(self, Self::Alive(_))
+impl HeapReferenceType {
+    pub fn to_rc(self) -> Rc<Self> { Rc::new(self) }
+}
+
+impl DataType for HeapReferenceType {
+    fn size(&self) -> usize {
+        16
     }
 
-    pub fn is_dropped(&self) -> bool {
-        matches!(self, Self::Dropped)
+    fn typename(&self) -> String {
+        format!("@{}&{}", self.generation, self.t)
     }
 
-    pub fn unwrap(&self) -> &Region {
-        match self {
-            RegionValidity::Alive(region) => region,
-            RegionValidity::Dropped => panic!("Attempted to unwrap a dropped region"),
-        }
+    fn construct_from_raw(&self, raw: &[u8]) -> TypeResult<ValueCell> {
+        let (raw_generation, raw_reference) = raw.split_at(8);
+        let generation = usize::from_be_bytes(raw_generation.try_into().unwrap());
+        let raw_reference = usize::from_be_bytes(raw_reference.try_into().unwrap());
+        let reference = Reference::new(self.t.clone(), raw_reference);
+        Ok(HeapReference{ generation, reference }.to_cell())
     }
 }
 
@@ -38,11 +46,32 @@ impl HeapReference {
     }
 
     pub fn generation(&self) -> usize { self.generation }
+    pub fn to_cell(self) -> ValueCell { Rc::new(RefCell::new(self)) }
+}
+
+impl DataValue for HeapReference {
+    fn data_type(&self) -> Type {
+        HeapReferenceType{ generation: self.generation, t: self.reference.referenced().clone() }.to_rc()
+    }
+
+    fn raw(&self) -> Vec<u8> {
+        let mut raw = Vec::new();
+        raw.extend_from_slice(&self.generation.to_be_bytes());
+        raw.extend_from_slice(&self.reference.raw());
+        raw
+    }
+
+    fn set(&mut self, raw: &[u8]) {
+        let (raw_generation, raw_reference) = raw.split_at(8);
+        self.generation = usize::from_be_bytes(raw_generation.try_into().unwrap());
+        let raw_reference = usize::from_be_bytes(raw_reference.try_into().unwrap());
+        self.reference = Reference::new(self.reference.referenced().clone(), raw_reference);
+    }
 }
 
 #[derive(Default)]
 pub struct Heap {
-    raw: Vec<RegionValidity>,
+    raw: Vec<DroppableRegion>,
     current: Option<usize>,
 }
 
@@ -52,19 +81,22 @@ impl Heap {
     pub fn next_generation(&mut self) -> &Region {
         self.current = match self.current {
             None => Some(0),
-            Some(_) => Some(self.raw.len()),
+            Some(_) => Some(self.raw.len()), // current size IS next index
         };
-        self.raw.push(RegionValidity::Alive(Region::default()));
-        self.raw.last().unwrap().unwrap()
+        self.raw.push(DroppableRegion::Alive(Region::default()));
+        self.raw.last().unwrap().unwrap() // Very confident unwrap()s
     }
-    pub fn clear(&mut self, generation: usize) { self.raw[generation] = RegionValidity::Dropped; }
+    pub fn clear(&mut self, generation: usize) { self.raw[generation] = DroppableRegion::Dropped; }
     pub fn is_alive(&self, generation: usize) -> bool { self.raw[generation].is_alive() }
 }
 
 impl Allocator<HeapReference> for Heap {
     fn allocate(&mut self, cell: ValueCell) -> HeapReference {
-        let current = self.current_generation().unwrap();
-        if let RegionValidity::Alive(region) = self.raw.get_mut(current).unwrap() {
+        let current = self.current_generation().unwrap_or_else(|| {
+            self.next_generation();
+            self.current_generation().unwrap()
+        });
+        if let Some(DroppableRegion::Alive(region)) = self.raw.get_mut(current) {
             let r = region.allocate(cell);
             HeapReference { generation: self.current.unwrap(), reference: r }
         } else {
@@ -75,7 +107,7 @@ impl Allocator<HeapReference> for Heap {
 
 impl Dereference<HeapReference> for Heap {
     fn dereference(&self, reference: HeapReference) -> Option<ValueCell> {
-        if let RegionValidity::Alive(r) = self.raw.get(reference.generation)? {
+        if let DroppableRegion::Alive(r) = self.raw.get(reference.generation)? {
             r.dereference(reference.reference)
         } else {
             None
@@ -86,7 +118,7 @@ impl Dereference<HeapReference> for Heap {
         if !self.is_alive(reference.generation) || reference.generation >= self.raw.len() {
             return false;
         }
-        if let Some(RegionValidity::Alive(region)) = self.raw.get(reference.generation) {
+        if let Some(DroppableRegion::Alive(region)) = self.raw.get(reference.generation) {
             region.validate(&reference.reference)
         } else {
             false
@@ -99,8 +131,8 @@ impl Debug for Heap {
         writeln!(f, "Heap [{:?}]", self.current)?;
         for (i, r) in self.raw.iter().enumerate() {
             writeln!(f, "  - Region #{} : {}", i, match r {
-                RegionValidity::Alive(region) => format!("Alive (&{})", region.len()),
-                RegionValidity::Dropped => "Dropped".to_string()
+                DroppableRegion::Alive(region) => format!("Alive (&{})", region.len()),
+                DroppableRegion::Dropped => "Dropped".to_string()
             })?;
         }
         Ok(())
