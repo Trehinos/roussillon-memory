@@ -2,11 +2,12 @@
 name = "roussillon-memory"
 description = "Memory utility for the roussillon language"
 authors = ["Sébastien GELDREICH <trehinos@gmail.com>"]
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 license = "MIT"
 keywords = ["memory", "reference", "heap", "stack", "region"]
 categories = ["data-structures", "memory-management"]
+repository = "https://asgard.trehinos.eu/roussillon-project/memory"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [features]
