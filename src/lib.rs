@@ -23,6 +23,8 @@ mod tests {
             reference::Reference
         }
     };
+    use roussillon_type_system::factory::create_struct;
+    use roussillon_type_system::identity::LabelBank;
 
     use crate::heap::Heap;
     use crate::region::{Allocator, Dereference, Region};
@@ -43,14 +45,17 @@ mod tests {
     }
     
     #[test]
-    fn test_struct_reference() {
+    fn  test_struct_reference() {
         let mut memory = Region::default();
-
-        let my_struct = Structure::new("MyStruct", ProductType::new(&[
+        let my_struct = create_struct("MyStruct", LabelBank::from(&[
+            "field_a",
+            "field_b",
+            "field_c",
+        ]), &[
             Primitive::Integer.to_rc(),
             Primitive::Integer.to_rc(),
             Primitive::Float.to_rc(),
-        ])).to_rc();
+        ]);
         // println!("\n{:?}", my_struct);
 
         let original_object = Record::new(my_struct.clone(), &[
@@ -71,15 +76,20 @@ mod tests {
         // println!("{:?}", heap);
         assert_eq!(heap.current_generation(), None);
         
+        
         heap.next_generation();
         // println!("{:?}", heap);
         assert_eq!(heap.current_generation(), Some(0));
-
-        let my_struct = Structure::new("MyStruct", ProductType::new(&[
+        
+        let my_struct = create_struct("MyStruct", LabelBank::from(&[
+            "field_a",
+            "field_b",
+            "field_c",
+        ]), &[
             Primitive::Integer.to_rc(),
             Primitive::Integer.to_rc(),
             Primitive::Float.to_rc(),
-        ])).to_rc();
+        ]);
         // println!("\n{:?}", my_struct);
 
         let original_object = Record::new(my_struct.clone(), &[
