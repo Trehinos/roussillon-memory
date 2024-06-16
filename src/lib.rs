@@ -11,8 +11,6 @@ mod tests {
         types::{
             concept::DataType,
             primitive::Primitive,
-            algebraic::ProductType,
-            typedef::Structure
         },
         value::{
             concept::{DataValue, ValueCell},
