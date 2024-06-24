@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.4(dev)
+
+- README update
+
 ## v0.1.3
 
 - roussillon-type-system update to v0.3.1.
