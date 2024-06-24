@@ -1,4 +1,3 @@
-
 pub mod region;
 #[cfg(feature = "heap")]
 pub mod heap;
@@ -7,6 +6,7 @@ pub mod stack;
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
     use roussillon_type_system::{
         types::{
             concept::DataType,
@@ -18,11 +18,12 @@ mod tests {
             byte::Bytes,
             number::{Float, Integer},
             record::Record,
-            reference::Reference
-        }
+            reference::Reference,
+        },
     };
     use roussillon_type_system::factory::create_struct;
     use roussillon_type_system::identity::LabelBank;
+    use roussillon_type_system::types::typedef::Structure;
 
     use crate::heap::Heap;
     use crate::region::{Allocator, Dereference, Region};
@@ -41,11 +42,9 @@ mod tests {
         assert_eq!(t1, t2);
         assert_eq!(raw1, raw2);
     }
-    
-    #[test]
-    fn  test_struct_reference() {
-        let mut memory = Region::default();
-        let my_struct = create_struct("MyStruct", LabelBank::from(&[
+
+    fn test_struct() -> Rc<Structure> {
+        create_struct("MyStruct", LabelBank::from(&[
             "field_a",
             "field_b",
             "field_c",
@@ -53,61 +52,59 @@ mod tests {
             Primitive::Integer.to_rc(),
             Primitive::Integer.to_rc(),
             Primitive::Float.to_rc(),
-        ]);
-        // println!("\n{:?}", my_struct);
+        ])
+    }
 
-        let original_object = Record::new(my_struct.clone(), &[
+    fn test_object(structure: Rc<Structure>) -> ValueCell {
+        Record::new(structure, &[
             Integer::new(40).to_cell(),
             Integer::new(96).to_cell(),
             Float::new(40.0).to_cell()
-        ]).unwrap().to_cell();
+        ]).unwrap().to_cell()
+    }
+
+    #[test]
+    fn test_struct_reference() {
+        let mut memory = Region::default();
+        let my_struct = test_struct();
+        // println!("\n{:?}", my_struct);
+
+        let original_object = test_object(my_struct.clone());
 
         let reference = memory.allocate(original_object.clone());
         test_type(&reference, "MyStruct");
         let dereferenced_object = memory.dereference(reference).unwrap();
         test_cells(&original_object, &dereferenced_object);
     }
-    
+
     #[test]
     fn test_heap() {
         let mut heap = Heap::new();
         // println!("{:?}", heap);
         assert_eq!(heap.current_generation(), None);
-        
-        
+
+
         heap.next_generation();
         // println!("{:?}", heap);
         assert_eq!(heap.current_generation(), Some(0));
-        
-        let my_struct = create_struct("MyStruct", LabelBank::from(&[
-            "field_a",
-            "field_b",
-            "field_c",
-        ]), &[
-            Primitive::Integer.to_rc(),
-            Primitive::Integer.to_rc(),
-            Primitive::Float.to_rc(),
-        ]);
+
+        let my_struct = test_struct();
         // println!("\n{:?}", my_struct);
 
-        let original_object = Record::new(my_struct.clone(), &[
-            Integer::new(40).to_cell(),
-            Integer::new(96).to_cell(),
-            Float::new(40.0).to_cell()
-        ]).unwrap().to_cell();
+        let original_object = test_object(my_struct.clone());
 
         let reference = heap.allocate(original_object.clone());
         println!("{:?}", reference);
-        
+
         test_type(reference.reference(), "MyStruct");
         let dereferenced_object = heap.dereference(reference.clone()).unwrap();
         test_cells(&original_object, &dereferenced_object);
         // println!("{:?}", heap);
-        
+
         heap.next_generation();
         assert_eq!(heap.current_generation().unwrap(), 1);
         // println!("{:?}", heap);
-        
+
         heap.clear(0);
         // println!("{:?}", heap);
         assert!(!heap.validate(&reference));
@@ -116,7 +113,7 @@ mod tests {
     #[test]
     fn test_boolean_references() {
         let mut memory = Region::default();
-        
+
         let original_true = Boolean::create_true().to_cell();
         let original_false = Boolean::create_false().to_cell();
         let reference_true = memory.allocate(original_true.clone());
