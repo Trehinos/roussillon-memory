@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "roussillon-memory"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "roussillon-type-system",
 ]
