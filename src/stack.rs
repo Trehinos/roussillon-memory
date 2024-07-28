@@ -8,7 +8,7 @@ use roussillon_type_system::value::reference::Reference;
 use crate::region::{Allocator, Dereference, Region};
 
 pub struct StackReferenceType {
-    t: Type
+    t: Type,
 }
 
 impl StackReferenceType {
@@ -29,7 +29,7 @@ impl DataType for StackReferenceType {
         let level = usize::from_be_bytes(raw_generation.try_into().unwrap());
         let raw_reference = usize::from_be_bytes(raw_reference.try_into().unwrap());
         let reference = Reference::new(self.t.clone(), raw_reference);
-        Ok(StackReference{ level, reference }.to_cell())
+        Ok(StackReference { level, reference }.to_cell())
     }
 }
 
@@ -48,7 +48,7 @@ impl StackReference {
 
 impl DataValue for StackReference {
     fn data_type(&self) -> Type {
-        StackReferenceType{ t: self.reference.data_type() }.to_rc()
+        StackReferenceType { t: self.reference.data_type() }.to_rc()
     }
 
     fn raw(&self) -> Vec<u8> {
@@ -77,10 +77,6 @@ impl Stack {
     pub fn push(&mut self, region: Region) {
         self.raw.push(region)
     }
-
-    pub fn pop(&mut self) -> Option<Region> {
-        self.raw.pop()
-    }
 }
 
 impl Allocator<StackReference> for Stack {
@@ -88,6 +84,7 @@ impl Allocator<StackReference> for Stack {
         let mut current = self.pop().unwrap();
         let level = self.raw.len();
         let reference = current.allocate(cell);
+        self.push(current);
         StackReference { level, reference }
     }
 }
